@@ -1,46 +1,64 @@
-const CLIENT_ID = process.env.BNET_CLIENT_ID;
-const CLIENT_SECRET = process.env.BNET_SECRET
-// TODO: When this window closes, ideally the user would be navigated back to the original page they left, rather than reloading the app in a new window.
-export const OUATH_URI = `https://oauth.battle.net/authorize?client_id=${CLIENT_ID}&scope=wow.profile&redirect_uri=http://localhost:3000/profile&response_type=code&state=''`;
-const wowProfileHostName = 'https://na.api.blizzard.com?region=us&locale=en_US';
+const CLIENT_ID = process.env.NEXT_PUBLIC_BNET_CLIENT_ID;
+const CLIENT_SECRET = process.env.NEXT_PUBLIC_BNET_SECRET
 
-interface BlizzardAuthResponse {
+// TODO: When this window closes, ideally the user would be navigated back to the original page they left, rather than reloading the app in a new window.
+export const OUATH_URI = `https://oauth.battle.net/authorize?client_id=2d86ce13f34444569a3ec19c98e86ef4&scope=wow.profile&redirect_uri=http://localhost:3000/profile&response_type=code&state=''`;
+const wowProfileHostName = 'https://us.api.blizzard.com/profile/user/wow';
+
+interface BlizzardAuthCodeResponse {
   access_token: string;
   token_type: string;
   expires_in: number;
+  scope: string;
   sub: string
 }
 
-/** Auth Token once User has granted permission to access their profile info. */
-let BlizzardOAuthToken: BlizzardAuthResponse;
-/** Auth Code associated with WoW Profile Requests */
-let WoWProfileCode: string;
+export interface BlizzardWowProfileSummary {
+  collections: { href: string };
+  id: number;
+  wow_accounts: Account[]
+}
+
+interface Account {
+  characters: Character[];
+  id: number;
+}
+
+interface Character {
+  character: { href: string };
+  faction: { type: string; name: string };
+  gender: { type: string; name: string };
+  id: number;
+  level: number;
+  name: string;
+  playable_class: { type: string; name: string };
+  protected_character: { href: string };
+  realm: { key: { href: string }; name: string; id: number };
+}
+
+
+let wowProfileAuthInfo: BlizzardAuthCodeResponse;
 
 /**
- * Gain an OAuth Token for Accessing Blizz APIs. Store this Token in the service to be used/refreshed as needed.
- * https://develop.battle.net/documentation/guides/using-oauth/client-credentials-flow
+ * Once a User has granted us access to their scope, we need to retireve an access token to hit APIs moving forward, now that we have the User's approval code.
+ * @param code Auth Code received after a User has given us access to their WoW profile info. Use this code to request a proper Auth key for the `wow.profile` scope.
  */
-export async function getAuthTokenForBlizzardUser() {
-  // Do not get a new token unless we need to. We probably want to check for the expiration timestamp as well.
-  if (BlizzardOAuthToken?.access_token) return;
-
-  const headers = {
-    'Authorization': 'Basic ' + btoa(`${CLIENT_ID}:${CLIENT_SECRET}`),
-    'Content-Type': 'application/x-www-form-urlencoded'
-  }
-
+export async function getAuthorizationCodeForWowProfileScope(code: string): Promise<void> {
   try {
-    const response = await fetch('https://oauth.battle.net/token?redirect_uri=http://localhost:3000', {
-      headers: headers,
-      body: `grant_type=authorization_code&code=${WoWProfileCode}`,
-      method: 'POST'
+    const response = await fetch('https://oauth.battle.net/token', {
+      method: 'POST',
+      headers: {
+        authorization: 'Basic ' + btoa(`${CLIENT_ID}:${CLIENT_SECRET}`),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `grant_type=authorization_code&code=${code}&scope=wow.profile&redirect_uri=http://localhost:3000/profile`
     });
-    const data: BlizzardAuthResponse = await response.json();
-    if (data) {
-      BlizzardOAuthToken = data;
-    }
+    const data = await response.json();
+    if (data.error) { console.error(data.error, data); return; }
+    wowProfileAuthInfo = data;
+    console.log('we got data', wowProfileAuthInfo);
+    return;
   } catch (e) {
-    // TODO: Unless there is a true error, this block will never get hit. Fetch errors will handle themselves in the `try` block.
     console.error(e);
   }
 }
@@ -50,20 +68,14 @@ export async function getAuthTokenForBlizzardUser() {
  * @param code Auth Token received after a User has given us access to their WoW profile info
  * @returns
  */
-export async function getWowUserProfileSummary(): Promise<any> {
-
+export async function getWowUserProfileSummary(): Promise<BlizzardWowProfileSummary> {
   const headers = {
-    'Authorization': 'Bearer ' + btoa(`${'USZU4R7DI1HMYVXKODNCHJL3JPJJ4RS8LX'}`),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Battlenet-Namespace': 'profile-us'
+    'Content-Type': 'application/x-www-form-urlencoded'
   }
-  try {
-    const response = await fetch(wowProfileHostName, {
-      headers: headers
-    });
-    const data = await response.json();
-    if (data) {
-      return data;
-    }
-  } catch (e) { console.error(e); }
+  if (!wowProfileAuthInfo?.access_token) { console.error('No access token found'); }
+  const response = await fetch(wowProfileHostName + `?access_token=${wowProfileAuthInfo.access_token}&namespace=profile-us&:region=us&locale=en_US`, {
+    headers: headers
+  })
+  const data = await response.json();
+  return data;
 }
