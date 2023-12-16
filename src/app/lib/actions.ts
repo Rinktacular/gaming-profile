@@ -19,12 +19,12 @@ export interface BlizzardWowProfileSummary {
   wow_accounts: Account[]
 }
 
-interface Account {
+export interface Account {
   characters: Character[];
   id: number;
 }
 
-interface Character {
+export interface Character {
   character: { href: string };
   faction: { type: string; name: string };
   gender: { type: string; name: string };
@@ -36,7 +36,7 @@ interface Character {
   realm: { key: { href: string }; name: string; id: number };
 }
 
-
+// Auth info containing the API key to use once we have gotten wow.profile access
 let wowProfileAuthInfo: BlizzardAuthCodeResponse;
 
 /**
@@ -45,6 +45,8 @@ let wowProfileAuthInfo: BlizzardAuthCodeResponse;
  */
 export async function getAuthorizationCodeForWowProfileScope(code: string): Promise<void> {
   try {
+    if (wowProfileAuthInfo?.access_token) { console.error('Already have an access token'); return; }
+    if (!code) { console.error('Code not provided', code); return; }
     const response = await fetch('https://oauth.battle.net/token', {
       method: 'POST',
       headers: {
@@ -56,23 +58,23 @@ export async function getAuthorizationCodeForWowProfileScope(code: string): Prom
     const data = await response.json();
     if (data.error) { console.error(data.error, data); return; }
     wowProfileAuthInfo = data;
-    console.log('we got data', wowProfileAuthInfo);
-    return;
+    return data;
   } catch (e) {
     console.error(e);
   }
 }
 
 /**
+ * Using the access token we received from the `getAuthorizationCodeForWowProfileScope` function, we can now hit the WoW Profile API to get the User's profile info.
  *
  * @param code Auth Token received after a User has given us access to their WoW profile info
  * @returns
  */
-export async function getWowUserProfileSummary(): Promise<BlizzardWowProfileSummary> {
+export async function getWowUserProfileSummary(): Promise<BlizzardWowProfileSummary | void> {
+  if (!wowProfileAuthInfo?.access_token) { console.error('No access token'); return; }
   const headers = {
     'Content-Type': 'application/x-www-form-urlencoded'
   }
-  if (!wowProfileAuthInfo?.access_token) { console.error('No access token found'); }
   const response = await fetch(wowProfileHostName + `?access_token=${wowProfileAuthInfo.access_token}&namespace=profile-us&:region=us&locale=en_US`, {
     headers: headers
   })
