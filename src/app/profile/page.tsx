@@ -1,16 +1,17 @@
 'use client'
 
-import { BlizzardWowProfileSummary, OUATH_URI, getAuthorizationCodeForWowProfileScope, getWowUserProfileSummary } from "@/app/lib/actions";
+import { BlizzardWowProfileSummary, Character, OUATH_URI, getAuthorizationCodeForWowProfileScope, getWowCharacterMedia, getWowUserProfileSummary } from "@/app/lib/actions";
 import { useCallback, useEffect, useState } from "react";
 import WowProfile from "../ui/wow-profile";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 export default function Page() {
   const [data, setData] = useState<BlizzardWowProfileSummary | null>(null);
 
   const params = useSearchParams();
   let code = params.get('code') || '';
-  let realms;
+  let imageTag;
 
   const fetchData = useCallback(async () => {
     // If a User have yet to authorize the app to battle.net, we will not have a code.
@@ -19,7 +20,6 @@ export default function Page() {
       getWowUserProfileSummary().then((response) => {
         // Check to ensure response is not `null` before setting the data.
         if (response?.wow_accounts.length) {
-          console.log('response', response);
           setData(response);
         }
       });
@@ -29,6 +29,14 @@ export default function Page() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleWowProfileClick = (character: Character) => {
+    getWowCharacterMedia(character).then((response: any) => {
+      if (response?.appearance?.href) {
+        imageTag = <Image src={response.appearance.href + '&:region=us&:locale=en_US'} alt="profile" className="w-12 h-12" />;
+      }
+    });
+  }
 
   return (
     <>
@@ -55,11 +63,12 @@ export default function Page() {
           </select>
         </div>
       </div>
-      <div className="flex justify-evenly w-full flex-wrap">
+      <div className="flex justify-center w-full flex-wrap">
         {
-          data?.wow_accounts[0]?.characters.length && data.wow_accounts[0].characters.map((character, i) => <WowProfile key={i} character={character} />)
+          data?.wow_accounts[0]?.characters.length && data.wow_accounts[0].characters.map((character, i) => <span className="flex justify-center w-5/12" key={i} onClick={() => handleWowProfileClick(character)}><WowProfile character={character} /></span>)
         }
       </div>
     </>
   )
+
 }
