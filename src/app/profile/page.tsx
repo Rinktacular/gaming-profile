@@ -1,6 +1,6 @@
 'use client'
 
-import { BlizzardWowProfileSummary, Character, OUATH_URI, getAuthorizationCodeForWowProfileScope, getWowCharacterMedia, getWowUserProfileSummary } from "@/app/lib/actions";
+import { BlizzardWowProfileSummary, Character, OUATH_URI, getAuthorizationCodeForWowProfileScope, getWowCharacterMedia, getWowUserProfileSummary } from "@/lib/actions";
 import { useCallback, useEffect, useState } from "react";
 import WowProfile from "../ui/wow-profile";
 import { useSearchParams } from "next/navigation";
