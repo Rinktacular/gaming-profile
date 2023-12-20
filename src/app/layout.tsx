@@ -6,7 +6,7 @@ import { getAuthenticatedAppForUser } from '@/lib/firebase/firebase'
 import { User } from 'firebase/auth'
 import { Providers } from './providers'
 import Script from 'next/script'
-import Head from 'next/head'
+import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,11 +27,12 @@ export default async function RootLayout({
   const initialUser = await getAuthenticatedAppForUser();
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="h-full bg-gray-50 bg-gradient-to-r from-[#541c1f] from-10% via-[#471437] via-30% to-[#03033c] to-90%">
       <head>
         <Script src="https://kit.fontawesome.com/0ac4b28902.js" strategy="beforeInteractive" />
+        <Link href="/dist/output.css" rel="stylesheet" />
       </head>
-      <body className={`${inter.className} antialisased`}>
+      <body className={`${inter.className} antialisased h-full bg-gradient-to-r from-[#541c1f] from-10% via-[#471437] via-30% to-[#03033c] to-90%`}>
         <Providers>
           <Header initialUser={(initialUser?.user as User)?.toJSON()} />
           {children}
