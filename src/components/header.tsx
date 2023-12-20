@@ -1,25 +1,23 @@
 'use client'
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import {
   onAuthStateChanged,
   signInWithGoogle,
   signOut
 } from "@/lib/firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { FirebaseApp } from "firebase/app";
 import { User } from "firebase/auth";
-import { firebaseConfig } from "@/lib/firebase/firebase";
 
 function useUserSession(initialUser: User | null | undefined): User | null | undefined {
   // The initialUser comes from the server via a server component
   const [user, setUser] = useState(initialUser);
   const router = useRouter()
+  const pathName = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged((authUser: any) => {
-      setUser(authUser)
+      setUser(authUser);
     })
 
     return () => unsubscribe()
@@ -28,12 +26,17 @@ function useUserSession(initialUser: User | null | undefined): User | null | und
 
   useEffect(() => {
     onAuthStateChanged((authUser: any) => {
-      if (user === undefined) return
+      if (user === undefined) { router.push('/login'); return; }
 
       // refresh when user changed to ease testing
       // TODO: Some weird tpying here to satisfy the compiler... might not always be a `User` here.
-      if ((user as User)?.email !== authUser?.email) {
+      else if ((user as User)?.email !== authUser?.email) {
         router.refresh()
+      }
+
+      // In this case, we are on the login page and the user is logged in, so we should redirect to the home page.
+      else if (pathName === '/login') {
+        router.push('/')
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,24 +54,13 @@ export default function Header({ initialUser }: { initialUser: any }) {
     signOut();
   };
 
-  const handleSignIn = (event: any) => {
-    event.preventDefault();
-    console.log('signin in', firebaseConfig);
-    signInWithGoogle();
-  };
-
   return (
+    user &&
     <header>
       <Link href="/">Game Profile Home</Link>
       <div>
-        <span>{user?.displayName ? (
-          <>
-            <span>{user?.displayName}</span><a href="#" onClick={handleSignOut}>Sign Out</a><span></span>
-          </>
-        ) : (
-          <a href="#" onClick={handleSignIn}>Sign In with Google</a>
-        )}
-        </span>
+        <span>{user?.email}</span>
+        <a href="#" onClick={handleSignOut}>Sign Out</a>
       </div>
     </header>
   )

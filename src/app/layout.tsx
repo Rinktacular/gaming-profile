@@ -3,9 +3,10 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/header'
 import { getAuthenticatedAppForUser } from '@/lib/firebase/firebase'
-import { FirebaseApp } from 'firebase/app'
 import { User } from 'firebase/auth'
-import { app } from 'firebase-admin'
+import { Providers } from './providers'
+import Script from 'next/script'
+import Head from 'next/head'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,10 +27,15 @@ export default async function RootLayout({
   const initialUser = await getAuthenticatedAppForUser();
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
+      <head>
+        <Script src="https://kit.fontawesome.com/0ac4b28902.js" strategy="beforeInteractive" />
+      </head>
       <body className={`${inter.className} antialisased`}>
-        <Header initialUser={(initialUser?.user as User)?.toJSON()} />
-        {children}
+        <Providers>
+          <Header initialUser={(initialUser?.user as User)?.toJSON()} />
+          {children}
+        </Providers>
       </body>
     </html>
   )
