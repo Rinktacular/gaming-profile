@@ -1,12 +1,10 @@
-
-
-import { FirebaseApp, initializeApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import {
-  User,
   getAuth,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { initializeApp as initializeAdminApp, getApps, cert } from "firebase-admin/app";
 
 
 export const firebaseConfig = {
@@ -18,6 +16,12 @@ export const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+var firebaseAdminConfigData = require("./firebase-admin.json");
+
+export const firebaseAdminConfig = {
+  credential: cert(firebaseAdminConfigData)
+};
+
 /**
  * Firebase app instance that should initialize on app startup within the top level layout.tsx file.
  */
@@ -25,13 +29,17 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const adminApp = getApps().find((app) => app.name === 'adminApp') ? getApps().find((app) => app.name === 'adminApp') : initializeAdminApp(firebaseAdminConfig, 'adminApp');
 
+export async function getAuthenticatedAppForUser(session: string | undefined | null = null) {
+  console.log(auth.currentUser);
 
-export async function getAuthenticatedAppForUser(session: string | undefined = undefined): Promise<{ app: FirebaseApp | null, user: User | object | null | undefined }> {
+  auth.currentUser?.getIdToken(true).then((idToken) => {
+    console.log("idToken: ", idToken);
+  });
 
-  // TODO: Do not force the USer to login if there is a session we can take advantage of and assume they have auth.  This function has issues where it
+  // TODO: Do not force the User to login if there is a session we can take advantage of and assume they have auth.  This function has issues where it
   // attempts to run client code in that is meant for server and will cause runtimer issues when executed.
-  return { app: null, user: null };
   // if (typeof window !== "undefined") {
   //   // client
   //   console.log("client: ", app);
@@ -47,7 +55,7 @@ export async function getAuthenticatedAppForUser(session: string | undefined = u
 
   // const ADMIN_APP_NAME = "firebase-frameworks";
   // const adminApp =
-  //   getAdminApps().find((it: any) => it.name === ADMIN_APP_NAME) ||
+  //   getAdminApps().find((it) => it.name === ADMIN_APP_NAME) ||
   //   initializeAdminApp({
   //     credential: credential.applicationDefault(),
   //   }, ADMIN_APP_NAME);
@@ -71,10 +79,10 @@ export async function getAuthenticatedAppForUser(session: string | undefined = u
   // // handle revoked tokens
   // const isRevoked = !(await adminAuth
   //   .verifySessionCookie(session, true)
-  //   .catch((e: any) => console.error(e.message)));
+  //   .catch((e) => console.error(e.message)));
   // if (isRevoked) return noSessionReturn;
 
-  // // authenticate with custom token
+  // TODO: Allow for custom tokens to be used to authenticate the user.
   // if (authenticatedAuth.currentUser?.uid !== decodedIdToken.uid) {
   //   // TODO(jamesdaniels) get custom claims
   //   const customToken = await adminAuth

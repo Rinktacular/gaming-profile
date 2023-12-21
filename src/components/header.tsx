@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import {
   onAuthStateChanged,
   signOut
@@ -7,39 +7,38 @@ import {
 import Image from "next/image";
 import { User } from "firebase/auth";
 import { getApp } from "firebase/app";
+import { usePathname } from 'next/navigation'
 
-import { Fragment } from 'react'
-import { Disclosure, Menu, Transition } from '@headlessui/react'
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Fragment } from 'react';
+import { Disclosure, Menu, Transition } from '@headlessui/react';
+import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 function classNames(...classes: any[]) {
   return classes.filter(Boolean).join(' ')
 }
-
 
 function useUserSession(initialUser: User | null | undefined): User | null | undefined {
   // The initialUser comes from the server via a server component
   const [user, setUser] = useState(initialUser);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged((authUser: any) => {
-      setUser(authUser);
-    })
+    // const unsubscribe = onAuthStateChanged((authUser: any) => {
+    //   setUser(authUser);
+    // });
 
-    return () => unsubscribe()
+    // return () => unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   useEffect(() => {
-    onAuthStateChanged((authUser: any) => {
-      if (!!authUser) return;
-      // TODO: Force user to login page if no auth
-      if (user === undefined && getApp() !== undefined) {
-        return;
-      }
-    })
+    // onAuthStateChanged((authUser: any) => {
+    //   // TODO: Force user to login page if no auth, but only after the first render
+    //   if (user === undefined && getApp() !== undefined) {
+    //     return;
+    //   }
+    // })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [user]);
 
   return user;
 }
@@ -47,10 +46,25 @@ function useUserSession(initialUser: User | null | undefined): User | null | und
 export default function Header({ initialUser }: { initialUser: any }) {
 
   const user = useUserSession(initialUser);
+  const pathName = '';
+
+  /**
+   * Gets the class names needed to display active route styling to the header component links.
+   *
+   * @param path string to check in URL to see if it matches the current path
+   * @returns classNames to apply to an anchor tag to indicate if it is active or not
+   */
+  const isActive = (path: string) => {
+    if (pathName === path) {
+      return 'bg-gray-900 text-white';
+    } else {
+      return 'text-gray-300 hover:bg-gray-700 hover:text-white';
+    }
+  };
 
   const handleSignOut = (event: any) => {
     event.preventDefault();
-    signOut();
+    // signOut();
   };
 
   return (
@@ -72,12 +86,12 @@ export default function Header({ initialUser }: { initialUser: any }) {
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex space-x-4">
                     {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                    <a href="/" className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white">
+                    <a href="/" className={`rounded-md px-3 py-2 text-sm font-medium ${isActive('/')}`}>
                       Dashboard
                     </a>
                     <a
                       href="/profile"
-                      className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                      className={`rounded-md px-3 py-2 text-sm font-medium ${isActive('/profile')}`}
                     >
                       Edit Profile
                     </a>
@@ -101,10 +115,12 @@ export default function Header({ initialUser }: { initialUser: any }) {
                       <Menu.Button className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                         <span className="absolute -inset-1.5" />
                         <span className="sr-only">Open user menu</span>
-                        <img
-                          className="h-8 w-8 rounded-full"
-                          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                          alt=""
+                        <Image
+                          className="rounded-full"
+                          src={user?.photoURL || ''}
+                          alt="user profile image"
+                          width={32}
+                          height={32}
                         />
                       </Menu.Button>
                     </div>
