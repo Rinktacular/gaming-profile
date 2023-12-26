@@ -1,3 +1,4 @@
+'use client'
 import { Image } from "@nextui-org/react";
 
 // Force next.js to treat this route as server-side rendered

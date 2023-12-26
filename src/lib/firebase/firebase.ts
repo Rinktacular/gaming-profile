@@ -1,11 +1,11 @@
-import { initializeApp } from "firebase/app";
+'use client'
+import { initializeApp, getApps } from "firebase/app";
 import {
   getAuth,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { initializeApp as initializeAdminApp, getApps, cert } from "firebase-admin/app";
-
+import { cert } from "firebase-admin/app";
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,21 +18,20 @@ export const firebaseConfig = {
 
 var firebaseAdminConfigData = require("./firebase-admin.json");
 
-export const firebaseAdminConfig = {
-  credential: cert(firebaseAdminConfigData)
-};
-
 /**
  * Firebase app instance that should initialize on app startup within the top level layout.tsx file.
  */
-export const app = initializeApp(firebaseConfig);
+export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+export const adminApp = {
+  credential: cert(firebaseAdminConfigData)
+};
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const adminApp = getApps().find((app) => app.name === 'adminApp') ? getApps().find((app) => app.name === 'adminApp') : initializeAdminApp(firebaseAdminConfig, 'adminApp');
 
 export async function getAuthenticatedAppForUser(session: string | undefined | null = null) {
   console.log(auth.currentUser);
+  console.log(adminApp);
 
   auth.currentUser?.getIdToken(true).then((idToken) => {
     console.log("idToken: ", idToken);

@@ -1,13 +1,12 @@
-'use client'
+'use client';
 import React, { useState, useEffect } from "react";
 import {
   onAuthStateChanged,
   signOut
 } from "@/lib/firebase/auth";
+import { auth } from "@/lib/firebase/firebase";
 import Image from "next/image";
 import { User } from "firebase/auth";
-import { getApp } from "firebase/app";
-import { usePathname } from 'next/navigation'
 
 import { Fragment } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
@@ -22,21 +21,26 @@ function useUserSession(initialUser: User | null | undefined): User | null | und
   const [user, setUser] = useState(initialUser);
 
   useEffect(() => {
-    // const unsubscribe = onAuthStateChanged((authUser: any) => {
-    //   setUser(authUser);
-    // });
+    const unsubscribe = onAuthStateChanged((authUser: any) => {
+      setUser(authUser);
+    });
 
-    // return () => unsubscribe()
+    return () => unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // onAuthStateChanged((authUser: any) => {
-    //   // TODO: Force user to login page if no auth, but only after the first render
-    //   if (user === undefined && getApp() !== undefined) {
-    //     return;
-    //   }
-    // })
+    onAuthStateChanged((authUser: any) => async () => {
+      // Wait for the auth init to complete before we check user auth status
+      await auth.authStateReady();
+
+      // TODO: Force user to login page if no auth, but only after the first render
+      if (user === undefined) {
+        console.log('user is undefined', user);
+        return;
+      }
+      console.log('user is not undefined', user);
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -64,7 +68,7 @@ export default function Header({ initialUser }: { initialUser: any }) {
 
   const handleSignOut = (event: any) => {
     event.preventDefault();
-    // signOut();
+    signOut();
   };
 
   return (
