@@ -1,7 +1,6 @@
-'use client';
+'use client'
 import React, { useState, useEffect } from "react";
 import {
-  onAuthStateChanged,
   signOut
 } from "@/lib/firebase/auth";
 import { auth } from "@/lib/firebase/firebase";
@@ -16,40 +15,9 @@ function classNames(...classes: any[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-function useUserSession(initialUser: User | null | undefined): User | null | undefined {
-  // The initialUser comes from the server via a server component
-  const [user, setUser] = useState(initialUser);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged((authUser: any) => {
-      setUser(authUser);
-    });
-
-    return () => unsubscribe()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    onAuthStateChanged((authUser: any) => async () => {
-      // Wait for the auth init to complete before we check user auth status
-      await auth.authStateReady();
-
-      // TODO: Force user to login page if no auth, but only after the first render
-      if (user === undefined) {
-        console.log('user is undefined', user);
-        return;
-      }
-      console.log('user is not undefined', user);
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  return user;
-}
-
 export default function Header({ initialUser }: { initialUser: any }) {
 
-  const user = useUserSession(initialUser);
+  const user = initialUser;
   const pathName = '';
 
   /**
@@ -68,7 +36,7 @@ export default function Header({ initialUser }: { initialUser: any }) {
 
   const handleSignOut = (event: any) => {
     event.preventDefault();
-    signOut();
+    // signOut();
   };
 
   return (
@@ -172,7 +140,6 @@ export default function Header({ initialUser }: { initialUser: any }) {
                                 active ? 'bg-gray-100' : '',
                                 'block px-4 py-2 text-sm text-gray-700'
                               )}
-                              onClick={handleSignOut}
                             >
                               Sign out
                             </a>
@@ -233,10 +200,13 @@ export default function Header({ initialUser }: { initialUser: any }) {
             <div className="border-t border-gray-700 pb-3 pt-4">
               <div className="flex items-center px-5">
                 <div className="flex-shrink-0">
-                  <img
-                    className="h-10 w-10 rounded-full"
+                  <Image
+                    className="rounded-full"
                     src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
                     alt=""
+                    height={10}
+                    width={10}
+
                   />
                 </div>
                 <div className="ml-3">
@@ -271,7 +241,6 @@ export default function Header({ initialUser }: { initialUser: any }) {
                   as="a"
                   href="#"
                   className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
-                  onClick={handleSignOut}
                 >
                   Sign out
                 </Disclosure.Button>

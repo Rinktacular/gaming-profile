@@ -1,11 +1,18 @@
+'use client'
 import { Image } from "@nextui-org/react";
 import {
   signInWithGoogle
 } from "@/lib/firebase/auth";
 
-const handleSignIn = (event: any) => {
+let error = '';
+
+
+const handleSignIn = async (event: any) => {
   event.preventDefault();
-  signInWithGoogle();
+  await signInWithGoogle().then((result) => {
+    console.log(result);
+    if (result) error = result;
+  });
 };
 
 // TODO: Allow username/password login as well as Google login.
@@ -96,7 +103,7 @@ export default function LoginForm() {
                 </button>
               </div>
             </form>
-
+            {!!error && <span className="text-rose-700">error</span>}
             <div>
               <div className="relative mt-10">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
